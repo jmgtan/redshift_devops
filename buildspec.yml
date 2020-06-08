@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: correto8
+    build:
+      commands:
+        - mvn clean test
+reports:
+  SurefireReports:
+    files:
+      - '**/*'
+    base-directory: 'target/surefire-reports'
