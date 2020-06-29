@@ -6,6 +6,7 @@ phases:
       java: corretto8
   pre_build:
     commands:
+      - export TEST_JDBC_URL="jdbc:redshift://$TEST_HOST:$TEST_PORT/$TEST_DB_NAME"
       - export FLYWAY_URL=$TEST_JDBC_URL
       - export FLYWAY_USER=$TEST_JDBC_USER
       - export FLYWAY_PASSWORD=$TEST_JDBC_PASSWORD
