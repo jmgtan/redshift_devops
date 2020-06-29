@@ -6,7 +6,9 @@ This is to demonstrate how to use AWS CodeSuite of services to build a DevOps pi
 
 ### Unit Tests via `ConnectionManager`
 
-* `TEST_JDBC_URL` - the JDBC URL for the tests.
+* `TEST_HOST` - the Redshift hostname.
+* `TEST_PORT` - the Redshift port.
+* `TEST_DB_NAME` - the Redshift database name.
 * `TEST_JDBC_USER` - the JDBC User for the tests.
 * `TEST_JDBC_PASSWORD` - the JDBC Password for the tests.
 * `TEST_REDSHIFT_IAM_ROLE` - the IAM ARN that will be used to ingest test data.
