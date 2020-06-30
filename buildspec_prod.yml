@@ -12,9 +12,4 @@ phases:
       - export FLYWAY_PASSWORD=$TEST_JDBC_PASSWORD
   build:
     commands:
-      - mvn clean test
-reports:
-  SurefireReports:
-    files:
-      - '**/*'
-    base-directory: 'target/surefire-reports'
+      - mvn clean process-resources
