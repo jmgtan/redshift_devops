@@ -323,3 +323,51 @@ Resources:
               Configuration:
                 ProjectName: !Ref ProdCodeBuild
               Name: ProdDeployAction
+  CodeCommitEventIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: InlineServicePolicy1
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codepipeline:StartPipelineExecution
+                Resource: "*"
+  CodeCommitEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Trigger CodePipeline whenever there's a commit to the master branch"
+      State: "ENABLED"
+      EventPattern:
+        source:
+          - "aws.codecommit"
+        detail-type:
+          - "CodeCommit Repository State Change"
+        resources:
+          - !GetAtt CodeRepository.Arn
+        detail:
+          event:
+            - "referenceCreated"
+            - "referenceUpdated"
+          referenceType:
+            - "branch"
+          referenceName:
+            - "master"
+      Targets:
+        - Arn: !Sub
+            - "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${pipelineName}"
+            - {pipelineName: !Ref ReleasePipeline}
+          Id: !Sub
+            - "CodeCommitEvent-Target-${pipelineName}"
+            - {pipelineName: !Ref ReleasePipeline}
+          RoleArn: !GetAtt CodeCommitEventIAMRole.Arn
