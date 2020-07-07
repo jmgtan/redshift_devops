@@ -1,24 +1,28 @@
-## Redshift Devops
+# Redshift Devops
 
-This is to demonstrate how to use AWS CodeSuite of services to build a DevOps pipeline to test changes to the Redshift database.
+## High Level Architecture
+![Architecture](doc-images/redshift_devops.png)
 
-## Environment Variables
+## Components
+This demo uses the following components to enable CI/CD of Redshift Stored Procedures and schema changes.
+- AWS CodePipeline to do the overall orchestration.
+- AWS CodeCommit as the version control system. 
+- AWS CodeBuild as the execution environment for Apache Maven.
+- AWS Secrets Manager to store the Redshift connection parameters.
 
-### Unit Tests via `ConnectionManager`
+The application uses Apache Maven with Flyway for database migrations and JUnit for unit testing.
 
-* `TEST_HOST` - the Redshift hostname.
-* `TEST_PORT` - the Redshift port.
-* `TEST_DB_NAME` - the Redshift database name.
-* `TEST_JDBC_USER` - the JDBC User for the tests.
-* `TEST_JDBC_PASSWORD` - the JDBC Password for the tests.
-* `TEST_REDSHIFT_IAM_ROLE` - the IAM ARN that will be used to ingest test data.
-* `TEST_DATA_S3_BUCKET` - the S3 bucket name where the tests data is located.
+The demo also provides 2 types of buildspec file:
+- buildspec_test.yml for the testing phase
+- buildspec_prod.yml for the deployment phase
 
-### FlyWay
-Refer to [documentation](https://flywaydb.org/documentation/envvars) for a full list of variables.
+## CloudFormation Template
+You can deploy the demo pipeline using the provided CloudFormation template. Deployment instructions are as follows:
 
-The following are the pertinent ones:
-
-* `FLYWAY_URL`
-* `FLYWAY_USER`
-* `FLYWAY_PASSWORD`
+- Provision 2 Redshift clusters, one for test and another one for prod.
+- Clone the repository.
+- Deploy the template using CloudFormation.
+    - This will deploy services similar to the diagram above.
+- Push the code to the newly created CodeCommit repository.
+- This will then trigger the rest of the pipeline.
+- You can go to the CodeBuild console to view the test result (there's only one, but you can see how the integration works).
