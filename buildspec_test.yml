@@ -8,6 +8,7 @@ phases:
     commands:
       - aws s3 cp sampledata/products.csv s3://$TEST_DATA_S3_BUCKET/products.csv
       - aws s3 cp sampledata/users.csv s3://$TEST_DATA_S3_BUCKET/users.csv
+      - aws s3 cp sampledata/products_staging.csv s3://$TEST_DATA_S3_BUCKET/products_staging.csv
       - export TEST_JDBC_URL="jdbc:redshift://$TEST_HOST:$TEST_PORT/$TEST_DB_NAME"
       - export FLYWAY_URL=$TEST_JDBC_URL
       - export FLYWAY_USER=$TEST_JDBC_USER
@@ -18,6 +19,7 @@ phases:
   post_build:
     commands:
       - aws s3 rm s3://$TEST_DATA_S3_BUCKET/products.csv
+      - aws s3 rm s3://$TEST_DATA_S3_BUCKET/products_staging.csv
       - aws s3 rm s3://$TEST_DATA_S3_BUCKET/users.csv
 reports:
   SurefireReports:
