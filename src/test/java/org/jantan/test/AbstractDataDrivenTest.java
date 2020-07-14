@@ -14,9 +14,6 @@ public abstract class AbstractDataDrivenTest {
 
     @BeforeAll
     public static void setup() throws SQLException, ClassNotFoundException {
-        if (conn == null)
-            conn = ConnectionManager.createConnection();
-
         processTestDataset("users", "email,first_name,last_name", EXPECTED_USERS, "users.csv");
         processTestDataset("products", "product_name,price", EXPECTED_PRODUCTS, "products.csv");
         processTestDataset("products_staging", "product_name,price", EXPECTED_PRODUCTS_STAGING, "products_staging.csv");
@@ -27,13 +24,13 @@ public abstract class AbstractDataDrivenTest {
         conn.close();
     }
 
-    private static void processTestDataset(String table, String columnsList, int expectedCount, String dataFile) throws SQLException {
+    private static void processTestDataset(String table, String columnsList, int expectedCount, String dataFile) throws SQLException, ClassNotFoundException {
         if (!isTestDataValid(table, expectedCount))
             reloadData(table, columnsList, dataFile);
     }
 
-    private static boolean isTestDataValid(String table, int expectedCount) throws SQLException {
-        PreparedStatement ps = conn.prepareStatement("select count(*) from "+table);
+    private static boolean isTestDataValid(String table, int expectedCount) throws SQLException, ClassNotFoundException {
+        PreparedStatement ps = getOrCreateConnection().prepareStatement("select count(*) from "+table);
         ResultSet rs = ps.executeQuery();
         rs.next();
 
@@ -42,15 +39,15 @@ public abstract class AbstractDataDrivenTest {
         return count > 0 && count == expectedCount;
     }
 
-    protected static void clearTable(String table) throws SQLException {
-        Statement stmt = conn.createStatement();
+    protected static void clearTable(String table) throws SQLException, ClassNotFoundException {
+        Statement stmt = getOrCreateConnection().createStatement();
         stmt.execute("truncate "+table);
         stmt.close();
     }
 
-    private static void reloadData(String table, String columnsList, String dataFile) throws SQLException {
+    private static void reloadData(String table, String columnsList, String dataFile) throws SQLException, ClassNotFoundException {
         clearTable(table);
-        Statement stmt = conn.createStatement();
+        Statement stmt = getOrCreateConnection().createStatement();
         stmt.execute("copy "+table+"("+columnsList+") from '"+getDataLocation(dataFile)+"' csv iam_role '"+getDataLoadIAMRole()+"' ignoreheader 1");
         stmt.close();
     }
