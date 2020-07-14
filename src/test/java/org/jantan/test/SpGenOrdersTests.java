@@ -8,18 +8,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class SpGenOrdersTests extends AbstractDataDrivenTest {
 
     @Test
-    public void succeedTest() throws SQLException {
+    public void succeedTest() throws SQLException, ClassNotFoundException {
         clearTable("orders");
 
         String email = getRandomEmail();
 
         int numOfOrders = 50;
-        CallableStatement cs = conn.prepareCall("{call gen_orders(?, ?)}");
+        CallableStatement cs = getOrCreateConnection().prepareCall("{call gen_orders(?, ?)}");
         cs.setString(1, email);
         cs.setInt(2, numOfOrders);
         cs.execute();
 
-        PreparedStatement ps = conn.prepareStatement("select count(*) from orders where email=?");
+        PreparedStatement ps = getOrCreateConnection().prepareStatement("select count(*) from orders where email=?");
         ps.setString(1, email);
         ResultSet rs = ps.executeQuery();
 
@@ -27,11 +27,11 @@ public class SpGenOrdersTests extends AbstractDataDrivenTest {
 
         int count = rs.getInt(1);
 
-        assertEquals(numOfOrders, count);
+        assertEquals(numOfOrders, count, "The number of orders created should be the same as the parameter");
     }
 
-    private String getRandomEmail() throws SQLException {
-        Statement stmt = conn.createStatement();
+    private String getRandomEmail() throws SQLException, ClassNotFoundException {
+        Statement stmt = getOrCreateConnection().createStatement();
         ResultSet rs = stmt.executeQuery("select email from users order by random() limit 1");
         rs.next();
 

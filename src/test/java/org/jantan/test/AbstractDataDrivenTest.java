@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeAll;
 import java.sql.*;
 
 public abstract class AbstractDataDrivenTest {
-    protected static Connection conn = null;
+    private static Connection conn = null;
 
     protected static int EXPECTED_USERS = 1000;
     protected static int EXPECTED_PRODUCTS = 500;
@@ -61,5 +61,13 @@ public abstract class AbstractDataDrivenTest {
 
     private static String getDataLoadIAMRole() {
         return System.getenv("TEST_REDSHIFT_IAM_ROLE");
+    }
+
+    protected static Connection getOrCreateConnection() throws SQLException, ClassNotFoundException {
+        if (conn == null || conn.isClosed()) {
+            conn = ConnectionManager.createConnection();
+        }
+
+        return conn;
     }
 }
