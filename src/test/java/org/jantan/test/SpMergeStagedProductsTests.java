@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SpMergeStagedProductsTests extends AbstractDataDrivenTest {
 
     @Test
-    public void mergeTest() throws SQLException, ClassNotFoundException {
+    public void mergeStagedProductsTest() throws SQLException, ClassNotFoundException {
         CallableStatement cs = getOrCreateConnection().prepareCall("{call merge_staged_products()}");
         cs.execute();
 

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class SpGenOrdersTests extends AbstractDataDrivenTest {
 
     @Test
-    public void succeedTest() throws SQLException, ClassNotFoundException {
+    public void genOrdersTest() throws SQLException, ClassNotFoundException {
         clearTable("orders");
 
         String email = getRandomEmail();
