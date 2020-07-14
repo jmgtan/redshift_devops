@@ -8,13 +8,18 @@ import java.sql.*;
 public abstract class AbstractDataDrivenTest {
     protected static Connection conn = null;
 
+    protected static int EXPECTED_USERS = 1000;
+    protected static int EXPECTED_PRODUCTS = 500;
+    protected static int EXPECTED_PRODUCTS_STAGING = 100;
+
     @BeforeAll
     public static void setup() throws SQLException, ClassNotFoundException {
         if (conn == null)
             conn = ConnectionManager.createConnection();
 
-        processTestDataset("users", 1000, "users.csv");
-        processTestDataset("products", 50, "products.csv");
+        processTestDataset("users", EXPECTED_USERS, "users.csv");
+        processTestDataset("products", EXPECTED_PRODUCTS, "products.csv");
+        processTestDataset("products_staging", EXPECTED_PRODUCTS_STAGING, "products_staging.csv");
     }
 
     @AfterAll
