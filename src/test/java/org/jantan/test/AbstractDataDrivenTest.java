@@ -17,9 +17,9 @@ public abstract class AbstractDataDrivenTest {
         if (conn == null)
             conn = ConnectionManager.createConnection();
 
-        processTestDataset("users", EXPECTED_USERS, "users.csv");
-        processTestDataset("products", EXPECTED_PRODUCTS, "products.csv");
-        processTestDataset("products_staging", EXPECTED_PRODUCTS_STAGING, "products_staging.csv");
+        processTestDataset("users", "email,first_name,last_name", EXPECTED_USERS, "users.csv");
+        processTestDataset("products", "product_name,price", EXPECTED_PRODUCTS, "products.csv");
+        processTestDataset("products_staging", "product_name,price", EXPECTED_PRODUCTS_STAGING, "products_staging.csv");
     }
 
     @AfterAll
@@ -27,9 +27,9 @@ public abstract class AbstractDataDrivenTest {
         conn.close();
     }
 
-    private static void processTestDataset(String table, int expectedCount, String dataFile) throws SQLException {
+    private static void processTestDataset(String table, String columnsList, int expectedCount, String dataFile) throws SQLException {
         if (!isTestDataValid(table, expectedCount))
-            reloadData(table, dataFile);
+            reloadData(table, columnsList, dataFile);
     }
 
     private static boolean isTestDataValid(String table, int expectedCount) throws SQLException {
@@ -48,10 +48,10 @@ public abstract class AbstractDataDrivenTest {
         stmt.close();
     }
 
-    private static void reloadData(String table, String dataFile) throws SQLException {
+    private static void reloadData(String table, String columnsList, String dataFile) throws SQLException {
         clearTable(table);
         Statement stmt = conn.createStatement();
-        stmt.execute("copy "+table+" from '"+getDataLocation(dataFile)+"' csv iam_role '"+getDataLoadIAMRole()+"' ignoreheader 1");
+        stmt.execute("copy "+table+"("+columnsList+") from '"+getDataLocation(dataFile)+"' csv iam_role '"+getDataLoadIAMRole()+"' ignoreheader 1");
         stmt.close();
     }
 
