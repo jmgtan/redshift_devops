@@ -1,5 +1,8 @@
 package org.jantan.test;
 
+import com.jolbox.bonecp.BoneCP;
+import com.jolbox.bonecp.BoneCPConfig;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -7,10 +10,24 @@ import java.sql.SQLException;
 public class ConnectionManager {
     private static final String DEFAULT_JDBC_DRIVER_CLASS = "com.amazon.redshift.jdbc42.Driver";
 
-    public static Connection createConnection() throws ClassNotFoundException, SQLException {
-        Class.forName(getDriverClassName());
+    private static BoneCP dataSource;
 
-        return DriverManager.getConnection(getUrl(), getUser(), getPassword());
+    public static Connection createConnection() throws ClassNotFoundException, SQLException {
+        if (dataSource == null) {
+            BoneCPConfig config = new BoneCPConfig();
+            config.setJdbcUrl(getUrl());
+            config.setUsername(getUser());
+            config.setPassword(getPassword());
+            config.setMinConnectionsPerPartition(2);
+            config.setLazyInit(true);
+            dataSource = new BoneCP(config);
+        }
+
+        return dataSource.getConnection();
+//
+//        Class.forName(getDriverClassName());
+//
+//        return DriverManager.getConnection(getUrl(), getUser(), getPassword());
     }
 
     private static String getDriverClassName() {
