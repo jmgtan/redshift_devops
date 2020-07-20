@@ -1,4 +1,4 @@
-package org.jantan.test;
+package org.rsdevops.test;
 
 import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
