@@ -1,13 +1,6 @@
 #Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #SPDX-License-Identifier: MIT-0
 Parameters:
-  TestRedshiftClusterHost:
-    Type:  String
-    Description: The endpoint of the test Redshift cluster
-  TestRedshiftClusterPort:
-    Type: Number
-    Default: "5439"
-    Description: The port number of the test Redshift cluster
   TestRedshiftUsername:
     Type: String
     Description: The username of the test Redshift cluster
@@ -15,22 +8,6 @@ Parameters:
     Type: String
     Description: The password of the test Redshift cluster
     NoEcho: true
-  TestRedshiftDBName:
-    Type: String
-    Description: The db name that would be used for deployment and testing
-  TestRedshiftIAMRole:
-    Type: String
-    Description: The IAM role ARN that would be used to load data into the test cluster
-  TestS3Bucket:
-    Type: String
-    Description: The bucket name where to store the tests data
-  ProdRedshiftClusterHost:
-    Type:  String
-    Description: The endpoint of the prod Redshift cluster
-  ProdRedshiftClusterPort:
-    Type: Number
-    Default: "5439"
-    Description: The port number of the prod Redshift cluster
   ProdRedshiftUsername:
     Type: String
     Description: The username of the prod Redshift cluster
@@ -38,49 +15,114 @@ Parameters:
     Type: String
     Description: The password of the prod Redshift cluster
     NoEcho: true
-  ProdRedshiftDBName:
-    Type: String
-    Description: The db name that would be used for prod deployment
-  CodeRepositoryName:
-    Type: String
-    Description: Name of the CodeCommit repository
-  TestCodeBuildVpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: The VPC ID where CodeBuild would be deployed. This should be the same VPC where the test Redshift cluster is running
-  TestCodeBuildSubnetA:
-    Type: AWS::EC2::Subnet::Id
-    Description: The first subnet where CodeBuild would be deployed
-  TestCodeBuildSubnetB:
-    Type: AWS::EC2::Subnet::Id
-    Description: The second subnet where CodeBuild would be deployed
-  ProdCodeBuildVpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: The VPC ID where CodeBuild would be deployed. This should be the same VPC where the test Redshift cluster is running
-  ProdCodeBuildSubnetA:
-    Type: AWS::EC2::Subnet::Id
-    Description: The first subnet where CodeBuild would be deployed
-  ProdCodeBuildSubnetB:
-    Type: AWS::EC2::Subnet::Id
-    Description: The second subnet where CodeBuild would be deployed
 Resources:
+  DemoVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsHostnames: "true"
+      EnableDnsSupport: "true"
+  DemoVPCIGW:
+    Type: AWS::EC2::InternetGateway
+  DemoVPCIGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref DemoVPCIGW
+      VpcId: !Ref DemoVPC
+  DemoVPCPublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DemoVPC
+      CidrBlock: "10.0.0.0/24"
+      AvailabilityZone: !Sub "${AWS::Region}a"
+  DemoVPCPublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DemoVPC
+      CidrBlock: "10.0.1.0/24"
+      AvailabilityZone: !Sub "${AWS::Region}b"
+  DemoVPCPrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DemoVPC
+      CidrBlock: "10.0.2.0/24"
+      AvailabilityZone: !Sub "${AWS::Region}a"
+  DemoVPCPrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DemoVPC
+      CidrBlock: "10.0.3.0/24"
+      AvailabilityZone: !Sub "${AWS::Region}b"
+  DemoVPCPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DemoVPC
+  DemoVPCPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DemoVPC
+  DemoVPCPublicIGWRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref DemoVPCPublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref DemoVPCIGW
+  DemoVPCNatGWEIP:
+    Type: AWS::EC2::EIP
+  DemoVPCNatGW:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt DemoVPCNatGWEIP.AllocationId
+      SubnetId: !Ref DemoVPCPublicSubnetA
+  DemoVPCPublicSubnetARouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DemoVPCPublicRouteTable
+      SubnetId: !Ref DemoVPCPublicSubnetA
+  DemoVPCPublicSubnetBRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DemoVPCPublicRouteTable
+      SubnetId: !Ref DemoVPCPublicSubnetB
+  DemoVPCNatGWRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref DemoVPCPrivateRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref DemoVPCNatGW
+  DemoVPCPrivateSubnetARouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DemoVPCPrivateRouteTable
+      SubnetId: !Ref DemoVPCPrivateSubnetA
+  DemoVPCPrivateSubnetBRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DemoVPCPrivateRouteTable
+      SubnetId: !Ref DemoVPCPrivateSubnetB
+  DemoVPCRSSubnetGroup:
+    Type: AWS::Redshift::ClusterSubnetGroup
+    Properties:
+      Description: "Subnet group for Redshift Devops Demo VPC."
+      SubnetIds:
+        - !Ref DemoVPCPrivateSubnetA
+        - !Ref DemoVPCPrivateSubnetB
   TestRedshiftClusterSecrets:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: devops/test-rs-cluster
       SecretString: !Sub
         - '{"username": "${username}", "password": "${password}", "host": "${host}", "port": ${port}, "dbName": "${dbName}"}'
-        - {username: !Ref TestRedshiftUsername, password: !Ref TestRedshiftPassword, host: !Ref TestRedshiftClusterHost, port: !Ref TestRedshiftClusterPort, dbName: !Ref TestRedshiftDBName}
+        - {username: !Ref TestRedshiftUsername, password: !Ref TestRedshiftPassword, host: !GetAtt TestRedshiftCluster.Endpoint.Address, port: !GetAtt TestRedshiftCluster.Endpoint.Port, dbName: "dev"}
   ProdRedshiftClusterSecrets:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: devops/prod-rs-cluster
       SecretString: !Sub
         - '{"username": "${username}", "password": "${password}", "host": "${host}", "port": ${port}, "dbName": "${dbName}"}'
-        - {username: !Ref ProdRedshiftUsername, password: !Ref ProdRedshiftPassword, host: !Ref ProdRedshiftClusterHost, port: !Ref ProdRedshiftClusterPort, dbName: !Ref ProdRedshiftDBName}
+        - {username: !Ref ProdRedshiftUsername, password: !Ref ProdRedshiftPassword, host: !GetAtt ProdRedshiftCluster.Endpoint.Address, port: !GetAtt ProdRedshiftCluster.Endpoint.Port, dbName: "dev"}
   CodeRepository:
     Type: AWS::CodeCommit::Repository
     Properties:
-      RepositoryName: !Ref CodeRepositoryName
+      RepositoryName: "redshift-devops-repo"
   CodePipelineIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -103,6 +145,64 @@ Resources:
                   - codebuild:*
                   - codecommit:*
                 Resource: "*"
+  TestRedshiftCluster:
+    Type: AWS::Redshift::Cluster
+    Properties:
+      VpcSecurityGroupIds:
+        - !Ref RSClusterSecurityGroup
+      ClusterSubnetGroupName: !Ref DemoVPCRSSubnetGroup
+      ClusterType: "single-node"
+      NodeType: "dc2.large"
+      IamRoles:
+        - !GetAtt RedshiftIngestIAMRole.Arn
+      MasterUsername: !Ref TestRedshiftUsername
+      MasterUserPassword: !Ref TestRedshiftPassword
+      DBName: "dev"
+  ProdRedshiftCluster:
+    Type: AWS::Redshift::Cluster
+    Properties:
+      VpcSecurityGroupIds:
+        - !Ref RSClusterSecurityGroup
+      ClusterSubnetGroupName: !Ref DemoVPCRSSubnetGroup
+      ClusterType: "single-node"
+      NodeType: "dc2.large"
+      IamRoles:
+        - !GetAtt RedshiftIngestIAMRole.Arn
+      MasterUsername: !Ref ProdRedshiftUsername
+      MasterUserPassword: !Ref ProdRedshiftPassword
+      DBName: "dev"
+  RSClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for Redshift clusters"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5439
+          ToPort: 5439
+          CidrIp: "10.0.0.0/16"
+      VpcId: !Ref DemoVPC
+  RedshiftIngestIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: redshift.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: Inline0
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - !Sub "${SampleDataBucket.Arn}"
+                  - !Sub "${SampleDataBucket.Arn}/*"
   CodeBuildIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -149,29 +249,23 @@ Resources:
                     ec2:Subnet:
                       - !Sub
                         - "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${subnetId}"
-                        - {subnetId: !Ref TestCodeBuildSubnetA}
+                        - {subnetId: !Ref DemoVPCPrivateSubnetA}
                       - !Sub
                         - "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${subnetId}"
-                        - {subnetId: !Ref TestCodeBuildSubnetB}
-                      - !Sub
-                        - "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${subnetId}"
-                        - {subnetId: !Ref ProdCodeBuildSubnetA}
-                      - !Sub
-                        - "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet/${subnetId}"
-                        - {subnetId: !Ref ProdCodeBuildSubnetB}
+                        - {subnetId: !Ref DemoVPCPrivateSubnetB}
                     ec2:AuthorizedService: codebuild.amazonaws.com
   TestCodeBuildSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: RS Devops Test CodeBuild
       GroupDescription: Security group for RS Devops Test CodeBuild
-      VpcId: !Ref TestCodeBuildVpcId
+      VpcId: !Ref DemoVPC
   ProdCodeBuildSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: RS Devops Prod CodeBuild
       GroupDescription: Security group for RS Devops Prod CodeBuild
-      VpcId: !Ref ProdCodeBuildVpcId
+      VpcId: !Ref DemoVPC
   ProdCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -216,10 +310,10 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: buildspec_prod.yml
       VpcConfig:
-        VpcId: !Ref ProdCodeBuildVpcId
+        VpcId: !Ref DemoVPC
         Subnets:
-          - !Ref ProdCodeBuildSubnetA
-          - !Ref ProdCodeBuildSubnetB
+          - !Ref DemoVPCPrivateSubnetA
+          - !Ref DemoVPCPrivateSubnetB
         SecurityGroupIds:
           - !Ref ProdCodeBuildSecurityGroup
   TestCodeBuild:
@@ -263,20 +357,22 @@ Resources:
               - {arn: !Ref TestRedshiftClusterSecrets}
             Type: SECRETS_MANAGER
           - Name: TEST_REDSHIFT_IAM_ROLE
-            Value: !Ref TestRedshiftIAMRole
+            Value: !GetAtt RedshiftIngestIAMRole.Arn
           - Name: TEST_DATA_S3_BUCKET
-            Value: !Ref TestS3Bucket
+            Value: !Ref SampleDataBucket
       Source:
         Type: CODEPIPELINE
         BuildSpec: buildspec_test.yml
       VpcConfig:
-        VpcId: !Ref TestCodeBuildVpcId
+        VpcId: !Ref DemoVPC
         Subnets:
-          - !Ref TestCodeBuildSubnetA
-          - !Ref TestCodeBuildSubnetB
+          - !Ref DemoVPCPrivateSubnetA
+          - !Ref DemoVPCPrivateSubnetB
         SecurityGroupIds:
           - !Ref TestCodeBuildSecurityGroup
   CodePipelineBucket:
+    Type: AWS::S3::Bucket
+  SampleDataBucket:
     Type: AWS::S3::Bucket
   ReleasePipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -373,3 +469,10 @@ Resources:
             - "CodeCommitEvent-Target-${pipelineName}"
             - {pipelineName: !Ref ReleasePipeline}
           RoleArn: !GetAtt CodeCommitEventIAMRole.Arn
+Outputs:
+  TestRedshiftClusterJDBCUrl:
+    Value: !Sub "jdbc:redshift://${TestRedshiftCluster.Endpoint.Address}:${TestRedshiftCluster.Endpoint.Port}/dev"
+  ProdRedshiftClusterJDBCUrl:
+    Value: !Sub "jdbc:redshift://${ProdRedshiftCluster.Endpoint.Address}:${ProdRedshiftCluster.Endpoint.Port}/dev"
+  RedshiftIngestRoleArn:
+    Value: !GetAtt RedshiftIngestIAMRole.Arn
