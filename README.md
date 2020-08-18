@@ -59,7 +59,7 @@ Before you can push any code into this repo, follow the steps outlined in the [C
 
 ```
 git remote add codecommit <repo_https_url> 
-git push codecommit master
+git push codecommit main
 ```
 
 The last step will populate the repository and you can confirm it by refreshing the CodeCommit console. If you get prompted for username and password, input the Git credentials that you generated and downloaded from Step 3.
