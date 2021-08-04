@@ -444,7 +444,7 @@ Resources:
   CodeCommitEvent:
     Type: AWS::Events::Rule
     Properties:
-      Description: "Trigger CodePipeline whenever there's a commit to the master branch"
+      Description: "Trigger CodePipeline whenever there's a commit to the main branch"
       State: "ENABLED"
       EventPattern:
         source:
@@ -460,7 +460,7 @@ Resources:
           referenceType:
             - "branch"
           referenceName:
-            - "master"
+            - "main"
       Targets:
         - Arn: !Sub
             - "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${pipelineName}"
